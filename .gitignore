@@ -1,3 +1,8 @@
 node_modules/
 .vitepress/cache/
 .vitepress/dist/
+.vitepress/*.timestamp-*.mjs
+.workbuddy-ai/
+
+# 原始笔记资料，不公开
+算法竞赛资料/

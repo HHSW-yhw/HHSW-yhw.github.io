@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  # 每天 UTC 16:00（北京时间 0:00）自动重建一次，让刷题评分保持最新
+  schedule:
+    - cron: '0 16 * * *'
   workflow_dispatch:
 
 permissions:

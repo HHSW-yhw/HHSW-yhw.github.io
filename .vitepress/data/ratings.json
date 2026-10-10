@@ -1,0 +1,20 @@
+{
+  "Codeforces": {
+    "platform": "Codeforces",
+    "handle": "yanghuwei",
+    "rating": 1407,
+    "maxRating": 1428,
+    "rank": "specialist",
+    "url": "https://codeforces.com/profile/yanghuwei",
+    "updatedAt": "2026-10-10"
+  },
+  "AtCoder": {
+    "platform": "AtCoder",
+    "handle": "huhushengwei",
+    "rating": 823,
+    "maxRating": 823,
+    "contests": 16,
+    "url": "https://atcoder.jp/users/huhushengwei",
+    "updatedAt": "2026-10-10"
+  }
+}

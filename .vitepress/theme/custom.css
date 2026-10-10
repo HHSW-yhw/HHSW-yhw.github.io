@@ -1,0 +1,204 @@
+/* 品牌主色：紫色系 */
+
+:root {
+  --vp-c-brand-1: #534AB7;
+  --vp-c-brand-2: #7F77DD;
+  --vp-c-brand-3: #AFA9EC;
+  --vp-c-brand-soft: rgba(83, 74, 183, 0.14);
+}
+
+.dark {
+  --vp-c-brand-1: #CECBF6;
+  --vp-c-brand-2: #AFA9EC;
+  --vp-c-brand-3: #7F77DD;
+  --vp-c-brand-soft: rgba(127, 119, 221, 0.16);
+}
+
+/* ===== 版面比例：正文 80% + 右侧目录 20% =====
+   目标（用户指定）：
+     正文列占整个屏幕宽度的 80%（内部左右各留 48px 页边距），
+     右侧目录占右边的 20%。
+
+   做法：
+     先把 VPDoc 的左右内边距去掉，百分比才能对齐「整个屏幕宽度」；
+     于是 80%（正文）+ 20%（目录）= 100%。
+
+   ⚠️ 为什么每条都带 !important —— 这是本项目踩过的最大一个坑：
+     VitePress 默认主题的样式写在组件的 <style scoped> 里，编译后会自动
+     给选择器挂一个 [data-v-xxxxxxxx] 属性选择器，等于凭空多一份权重：
+        默认：.VPDoc:not(.has-sidebar) .container[data-v-e6f2a212] → 权重 0,4,0
+        我的：.VPDoc:not(.has-sidebar) .container                    → 权重 0,3,0
+     权重比不过，我的 max-width:none 就完全失效 —— 容器被锁死在默认的
+     1104px，整个版面挤在屏幕中间，两边各空出一大片（这就是「右边明明
+     有那么多空间」的根源），而侧栏也连带被压窄，目录文字只能换行或省略。
+     加 !important 是让这几条布局规则无条件生效，不再受权重与顺序影响。
+
+   仅在 >=1280px（右侧目录才会显示）时生效。 */
+@media (min-width: 1280px) {
+  /* 去掉左右内边距，让百分比能对齐整个屏幕宽度 */
+  .VPDoc {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* 容器占满整个屏幕宽度（关键！这一条曾经被默认样式压掉） */
+  .VPDoc:not(.has-sidebar) .container {
+    max-width: none !important;
+  }
+
+  /* 正文列：占 80%，左右各留 48px 页边距（页边距算在 80% 里面，不影响比例）
+     ⚠️ 必须写成 .container > .content（直接子元素）。
+     因为右侧目录内部也有一个 class 叫 content 的元素
+     （.VPDocAsideOutline > .content），用后代选择器会误伤它。 */
+  .VPDoc:not(.has-sidebar) .container > .content {
+    flex: 0 0 80% !important;
+    max-width: 80% !important;
+    margin: 0 !important;
+    padding-left: 48px !important;
+    padding-right: 48px !important;
+  }
+
+  /* 文字铺满整个正文列，不再另设宽度上限 */
+  .VPDoc.has-aside .content-container {
+    max-width: none !important;
+  }
+
+  /* 右侧目录：占右边 20%。
+     内边距设为 0 —— 这一列的左右留白交给下面的 aside-container 统一控制，
+     避免「列」和「列里那个 fixed 定位的盒子」两套宽度算法打架。 */
+  .VPDoc .aside {
+    flex: 0 0 20% !important;
+    width: 20% !important;
+    max-width: 20% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* 目录内层是 fixed 定位，百分比按「视口」计算。
+     让它和 .aside 用同一个 20%，两者左边对齐、宽度相同，就不会浪费空间。 */
+  .VPDoc .aside-container,
+  .VPDoc .aside-curtain {
+    width: 20% !important;
+  }
+
+  /* 目录文字与左侧竖线的间距：默认只有 16px，太挤，放宽到 24px */
+  .VPDoc .VPDocAsideOutline .content {
+    padding-left: 24px !important;
+  }
+}
+
+/* ===== 右侧目录：一级条目加粗放大 + 二级条目可收起 =====
+
+   目标（用户指定）：
+     · 对应正文 ## 的一级条目 → 字体加粗、变大
+     · 对应正文 ### 的二级条目 → 字号字重保持默认不变
+     · 二级条目可以收起，否则模板页几十条小节太长
+
+   目录的 DOM 是嵌套的（VitePress 的 VPDocOutlineItem.vue 递归渲染）：
+
+     ul.VPDocOutlineItem.root
+       └─ li
+          ├─ a.outline-link                   ← ## 条目
+          ├─ button.hhsw-outline-toggle       ← 脚本插进去的三角
+          └─ ul.VPDocOutlineItem.nested
+             └─ li > a.outline-link.nested    ← ### 条目
+
+   ⚠️ 关键点：li 用 flex 布局排，千万不要用 position: absolute 定位三角。
+     因为 VitePress 算左侧那条紫色指示线时读的是 activeLink.offsetTop，
+     而 offsetTop 的基准是「最近的已定位祖先」。一旦给 li 加上
+     position: relative，基准就从最外层 ul 变成 li 自己，offsetTop 全变成 0，
+     指示线会永远卡在顶部。
+
+   交互脚本在同目录的 outline-collapse.ts。 */
+
+.VPDoc .VPDocAsideOutline .VPDocOutlineItem.root > li {
+  display: flex;
+  flex-wrap: wrap;          /* 让子目录换到第二行 */
+  align-items: center;
+}
+
+/* 一级条目：加粗 + 放大 + 换成正文色。
+   flex-basis 用 0 而不是 auto —— 否则标题太长时会把三角挤到下一行。 */
+.VPDoc .VPDocAsideOutline .VPDocOutlineItem.root > li > .outline-link {
+  flex: 1 1 0;
+  min-width: 0;             /* 允许被压缩，否则省略号不出现 */
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--vp-c-text-1);
+}
+
+.VPDoc .VPDocAsideOutline .VPDocOutlineItem.root > li > .outline-link:hover {
+  color: var(--vp-c-brand-1);
+}
+
+/* 二级条目：字号字重保持默认的 14px / 400 不变 */
+.VPDoc .VPDocAsideOutline .VPDocOutlineItem.nested > li > .outline-link {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+/* 子目录整体换到第二行，占满整行 */
+.VPDoc .VPDocAsideOutline .VPDocOutlineItem.root > li > .VPDocOutlineItem.nested {
+  flex: 0 0 100%;
+  box-sizing: border-box;
+}
+
+/* 收起状态：整棵子树藏起来 */
+.VPDoc .VPDocAsideOutline .VPDocOutlineItem.root > li.hhsw-outline-collapsed > .VPDocOutlineItem.nested {
+  display: none;
+}
+
+/* 收起 / 展开的三角按钮 */
+.VPDoc .VPDocAsideOutline .hhsw-outline-toggle {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--vp-c-text-3);
+}
+
+.VPDoc .VPDocAsideOutline .hhsw-outline-toggle:hover {
+  color: var(--vp-c-brand-1);
+}
+
+/* 用边框拼一个实心三角，比字体图标稳 */
+.VPDoc .VPDocAsideOutline .hhsw-outline-toggle::before {
+  content: '';
+  display: block;
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 5px solid currentColor;
+  transition: transform 0.2s;
+}
+
+/* 展开时三角转向下 */
+.VPDoc .VPDocAsideOutline .VPDocOutlineItem.root > li:not(.hhsw-outline-collapsed) > .hhsw-outline-toggle::before {
+  transform: rotate(90deg);
+}
+
+/* 当前高亮项被收起来时，指示线会算错位置（display:none 的元素 offsetTop 是 0），
+   干脆把它藏掉；把所在小节展开后会自动恢复。 */
+.VPDocAsideOutline:has(.VPDocOutlineItem.root > li.hhsw-outline-collapsed > .VPDocOutlineItem .outline-link.active) .outline-marker {
+  opacity: 0 !important;
+}
+
+/* ============================================================
+   数学公式（KaTeX）
+   ============================================================ */
+
+/* 块级公式（$$...$$）：上下留白；长公式在窄屏可以横向滚动，
+   否则会把正文列撑破 */
+.vp-doc .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 6px 0;
+  margin: 18px 0;
+}
