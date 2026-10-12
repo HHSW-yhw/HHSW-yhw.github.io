@@ -24,4 +24,9 @@
 <span class="problem-card-desc">线段树与答案挂载</span>
 </a>
 
+<a class="problem-card" href="/problems/abc476F">
+<span class="problem-card-title">ABC476F Chebyshev Cafe</span>
+<span class="problem-card-desc">曼哈顿距离与切比雪夫距离转化</span>
+</a>
+
 </div>
