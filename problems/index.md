@@ -34,4 +34,9 @@
 <span class="problem-card-desc">数论分块与 DP</span>
 </a>
 
+<a class="problem-card" href="/problems/abc479F">
+<span class="problem-card-title">ABC479F Narrow Passage</span>
+<span class="problem-card-desc">建模为相邻交换与树状数组求逆序对</span>
+</a>
+
 </div>
