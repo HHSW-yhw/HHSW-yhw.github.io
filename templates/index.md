@@ -276,6 +276,16 @@ s.erase(x);           // 输入一个数 x：删除所有 x，O(k + log n)
 s.erase(it);          // 输入一个迭代器：删除这个迭代器指向的元素
 ```
 
+**multiset 删除单个元素必须传迭代器：**
+
+```cpp
+multiset<int> ms = {5, 5, 5};
+
+ms.erase(5);              // 删除所有值等于 5 的元素
+ms.erase(ms.find(5));     // 只删除一个（先用 find 定位迭代器）
+// 其实multiset完全可以取代优先队列，并且还支持查找和删除任意一个元素
+```
+
 ### map
 
 ```cpp

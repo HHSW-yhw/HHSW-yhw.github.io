@@ -29,4 +29,9 @@
 <span class="problem-card-desc">曼哈顿距离与切比雪夫距离转化</span>
 </a>
 
+<a class="problem-card" href="/problems/abc132F">
+<span class="problem-card-title">ABC132F Small Products</span>
+<span class="problem-card-desc">数论分块与 DP</span>
+</a>
+
 </div>
