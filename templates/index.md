@@ -1944,7 +1944,7 @@ bool is_prime(int x)
 ### 试除法分解质因数
 
 ```cpp
-void divide(int x)
+void divide(int x)                //时间复杂度为 O(sqrt(x))
 {
     for (int i = 2; i <= x / i; i ++ )
         if (x % i == 0)
